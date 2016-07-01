@@ -1,0 +1,11 @@
+{
+	"version" : "0.1.0",
+	"name" : "jbuffers",
+	"description" : "java.nio Buffer helpers.",
+	"homepage" : "https://github.com/TeamworkGuy2/JBuffers",
+	"license" : "MIT",
+	"main" : "./jar/jbuffers.jar",
+	"dependencies" : {
+		"jinterfaces" : "*"
+	}
+}
