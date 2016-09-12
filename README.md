@@ -1,6 +1,6 @@
 JBuffers
 ==============
-version: 0.1.0
+version: 0.1.1
 
 A collection of interfaces, factories, wrapper, and helper classes for java.nio.
 
