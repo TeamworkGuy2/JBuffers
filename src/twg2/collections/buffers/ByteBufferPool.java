@@ -2,6 +2,7 @@ package twg2.collections.buffers;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 
 import javax.naming.SizeLimitExceededException;
@@ -15,7 +16,7 @@ public class ByteBufferPool {
 	private int capacity;
 	private boolean direct;
 	private List<ByteBuffer> buffers;
-	private List<Boolean> inUse;
+	private BitSet inUse;
 
 
 	/** Create a byte buffer pool of objects
@@ -29,7 +30,7 @@ public class ByteBufferPool {
 		this.capacity = bufferSize;
 		this.direct = direct;
 		this.buffers = new ArrayList<ByteBuffer>();
-		this.inUse = new ArrayList<Boolean>();
+		this.inUse = new BitSet();
 	}
 
 
@@ -49,8 +50,11 @@ public class ByteBufferPool {
 	}
 
 
+	/**
+	 * @return true if any buffers are available, false if not
+	 */
 	public boolean hasInstance() {
-		return this.maxInstances < 1 || this.buffers.size() < this.maxInstances || this.findUnusedBuffer() > -1;
+		return this.maxInstances == -1 || this.buffers.size() < this.maxInstances || this.findUnusedBuffer() > -1;
 	}
 
 
@@ -79,8 +83,8 @@ public class ByteBufferPool {
 			else {
 				newBuffer = ByteBuffer.allocate(capacity);
 			}
+			this.inUse.set(this.buffers.size(), true);
 			this.buffers.add(newBuffer);
-			this.inUse.add(true);
 			return newBuffer;
 		}
 	}
@@ -88,7 +92,7 @@ public class ByteBufferPool {
 
 	private int findUnusedBuffer() {
 		// Search for an unused/returned buffer
-		int size = inUse.size();
+		int size = buffers.size();
 		for(int i = 0; i < size; i++) {
 			if(inUse.get(i) == false) {
 				return i;

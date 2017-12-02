@@ -67,4 +67,47 @@ public class ByteBufferTest {
 		}
 	}
 
+
+	@Test
+	public void testVarInt() throws Exception {
+		ByteBufferArray buf = new ByteBufferArray(16);
+
+		try {
+			buf.writeShort(32000);
+			Assert.assertEquals(2, buf.position());
+
+			buf.writeVarInt(125);
+			Assert.assertEquals(3, buf.position());
+
+			buf.writeVarInt(255);
+			Assert.assertEquals(5, buf.position());
+
+			buf.writeBoolean(true);
+			Assert.assertEquals(6, buf.position());
+
+			buf.writeVarInt(Integer.MAX_VALUE);
+			Assert.assertEquals(11, buf.position());
+
+			buf.writeVarInt(0x7FFFFF);
+			Assert.assertEquals(15, buf.position());
+
+			buf.writeVarInt(-5);
+			Assert.assertEquals(20, buf.position());
+
+			buf.position(0);
+
+			Assert.assertEquals(32000, buf.readShort());
+			Assert.assertEquals(125, buf.readVarInt());
+			Assert.assertEquals(255, buf.readVarInt());
+			Assert.assertEquals(true, buf.readBoolean());
+			Assert.assertEquals(Integer.MAX_VALUE, buf.readVarInt());
+			Assert.assertEquals(0x7FFFFF, buf.readVarInt());
+			Assert.assertEquals(-5, buf.readVarInt());
+		} catch(Exception e) {
+			throw new Exception(e);
+		} finally {
+			buf.close();
+		}
+	}
+
 }

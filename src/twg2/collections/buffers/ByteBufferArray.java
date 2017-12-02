@@ -14,12 +14,12 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-/** A buffer for storing, writing, and manipulating data as a byte array.
+/** A random access buffer for storing, writing, and manipulating data as a byte array.
  * This class was created to combine the resize-ability of a
  * {@link ByteArrayOutputStream} and the indexed positioning
  * of a {@link ByteBuffer} with the utility read/write methods
- * of {@link DataOutput}.<br/>
- * Basically it is a random access data input and output stream based
+ * of {@link DataOutput}.<br>
+ * It is a random access data input and output stream based
  * on a byte array rather than a file or socket.
  * @author TeamworkGuy2
  * @since 2013-8-3
@@ -54,12 +54,13 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	}
 
 
+	// ==== Write ====
+
 	/** Write the lowest byte of data from the input integer to this buffer array.
 	 * @param b an integer, write the lowest byte of this integer
 	 */
 	@Override
 	public void write(int b) {
-		// Write a byte
 		ensureNewDataFits(1);
 		buffer[pos] = (byte)b;
 		bytesAdded(1);
@@ -71,7 +72,6 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 */
 	@Override
 	public void write(byte[] bytes) {
-		// Write a byte array
 		write(bytes, 0, bytes.length);
 	}
 
@@ -113,7 +113,6 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 */
 	@Override
 	public final void writeByte(int value) {
-		// Write a byte
 		ensureNewDataFits(1);
 		buffer[pos] = (byte)value;
 		bytesAdded(1);
@@ -198,7 +197,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	}
 
 
-	/** Write the lowest byte of each character in the specified string to this buffer.
+	/** Write the lowest byte of each character in the specified string (i.e. an ASCII string) to this buffer.
 	 * @param string the string to write to this buffer. Only the lowest byte of each
 	 * character in the string is written.
 	 */
@@ -307,6 +306,80 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	}
 
 
+	public final void writeVarInt(int value) {
+		int len = (value & ~0x3FFF) == 0 ? ((value & ~0x7F) == 0 ? 1 : 2) : ((value & ~0x1FFFFF) == 0 ? 3 : ((value & ~0x7FFFFFF) == 0 ? 4 : 5));
+		// Write an int, assumed 1-4 bytes (big endian format)
+		// | 0x80 - a leading 1 bit indicates that this varint has another byte (i.e. the last byte has a leading 0 bit)
+		ensureNewDataFits(len);
+		switch(len) {
+		case 1:
+			buffer[pos] = (byte)(value & 0x7F);
+			break;
+		case 2:
+			buffer[pos] = (byte)(((value >>> 7) & 0x7F) | 0x80);
+			buffer[pos + 1] = (byte)(value & 0x7F);
+			break;
+		case 3:
+			buffer[pos] = (byte)(((value >>> 14) & 0x7F) | 0x80);
+			buffer[pos + 1] = (byte)(((value >>> 7) & 0x7F) | 0x80);
+			buffer[pos + 2] = (byte)(value & 0x7F);
+			break;
+		case 4:
+			buffer[pos] = (byte)(((value >>> 21) & 0x7F) | 0x80);
+			buffer[pos + 1] = (byte)(((value >>> 14) & 0x7F) | 0x80);
+			buffer[pos + 2] = (byte)(((value >>> 7) & 0x7F) | 0x80);
+			buffer[pos + 3] = (byte)(value & 0x7F);
+			break;
+		case 5:
+			buffer[pos] = (byte)(((value >>> 28) & 0x7F) | 0x80);
+			buffer[pos + 1] = (byte)(((value >>> 21) & 0x7F) | 0x80);
+			buffer[pos + 2] = (byte)(((value >>> 14) & 0x7F) | 0x80);
+			buffer[pos + 3] = (byte)(((value >>> 7) & 0x7F) | 0x80);
+			buffer[pos + 4] = (byte)(value & 0x7F);
+			break;
+		}
+		bytesAdded(len);
+	}
+
+
+	public final int readVarInt() {
+		int len = 0;
+		while(pos + len <= maxPos && (buffer[pos + len] & 0x80) == 0x80) { len++; }
+		len++; // last byte does not match | 0x80
+		if(len > 5) {
+			throw new IllegalStateException("varint format can only read up to 5 bytes");
+		}
+
+		int validPos = checkAndRead(len);
+		switch(len) {
+		case 1:
+			return (int)(buffer[validPos] & 0x7F);
+		case 2:
+			return (int)(((buffer[validPos] & 0x7F) << 7) |
+					(buffer[validPos + 1] & 0x7F));
+		case 3:
+			return (int)(((buffer[validPos] & 0x7F) << 14) |
+					((buffer[validPos + 1] & 0x7F) << 7) |
+					(buffer[validPos + 2] & 0x7F));
+		case 4:
+			return (int)(((buffer[validPos] & 0x7F) << 21) |
+					((buffer[validPos + 1] & 0x7F) << 14) |
+					((buffer[validPos + 2] & 0x7F) << 7) |
+					(buffer[validPos + 3] & 0x7F));
+		case 5:
+			return (int)(((buffer[validPos] & 0xF) << 28) |
+					((buffer[validPos + 1] & 0x7F) << 21) |
+					((buffer[validPos + 2] & 0x7F) << 14) |
+					((buffer[validPos + 3] & 0x7F) << 7) |
+					(buffer[validPos + 4] & 0x7F));
+		default:
+			throw new IllegalStateException("varint format can only read up to 5 bytes, found " + len + " byte varint");
+		}
+	}
+
+
+	// ==== Read ====
+
 	/** Read a single byte and return its unsigned value in the range
 	 * {@code 0} to {@code 255}.
 	 * @return the byte value read or -1 if the end of the stream has been reached
@@ -393,7 +466,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 */
 	@Override
 	public int skipBytes(int n) {
-		checkAndRead(n); // Adds n to this buffer's position!
+		checkAndRead(n);
 		return n;
 	}
 
@@ -403,7 +476,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 */
 	@Override
 	public boolean readBoolean() {
-		int validPos = checkAndRead(1); // Adds 1 to this buffer's position!
+		int validPos = checkAndRead(1);
 		boolean result = buffer[validPos] != 0;
 		return result;
 	}
@@ -414,7 +487,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 */
 	@Override
 	public byte readByte() {
-		int validPos = checkAndRead(1); // Adds 1 to this buffer's position!
+		int validPos = checkAndRead(1);
 		byte result = buffer[validPos];
 		return result;
 	}
@@ -425,7 +498,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 */
 	@Override
 	public int readUnsignedByte() {
-		int validPos = checkAndRead(1); // Adds 1 to this buffer's position!
+		int validPos = checkAndRead(1);
 		int result = (buffer[validPos] & 0xFF);
 		return result;
 	}
@@ -436,7 +509,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 */
 	@Override
 	public short readShort() {
-		int validPos = checkAndRead(2); // Adds 2 to this buffer's position!
+		int validPos = checkAndRead(2);
 		short result = (short)(((buffer[validPos] & 0xFF) << 8) | (buffer[validPos + 1] & 0xFF));
 		return result;
 	}
@@ -447,7 +520,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 */
 	@Override
 	public int readUnsignedShort() {
-		int validPos = checkAndRead(2); // Adds 2 to this buffer's position!
+		int validPos = checkAndRead(2);
 		int result = (buffer[validPos] << 8) + buffer[validPos + 1];
 		return result;
 	}
@@ -458,7 +531,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 */
 	@Override
 	public char readChar() {
-		int validPos = checkAndRead(2); // Adds 2 to this buffer's position!
+		int validPos = checkAndRead(2);
 		char ch = (char)(((buffer[validPos] & 0xFF) << 8) | (buffer[validPos + 1] & 0xFF));
 		return ch;
 	}
@@ -469,7 +542,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 */
 	@Override
 	public int readInt() {
-		int validPos = checkAndRead(4); // Adds 4 to this buffer's position!
+		int validPos = checkAndRead(4);
 		int result = (int)(((buffer[validPos] & 0xFF) << 24) |
 				((buffer[validPos + 1] & 0xFF) << 16) |
 				((buffer[validPos + 2] & 0xFF) << 8) |
@@ -483,7 +556,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 */
 	@Override
 	public long readLong() {
-		int validPos = checkAndRead(8); // Adds 8 to this buffer's position!
+		int validPos = checkAndRead(8);
 		long result = (long)(((long)(buffer[validPos] & 0xFF) << 56) |
 				((long)(buffer[validPos + 1] & 0xFF) << 48) |
 				((long)(buffer[validPos + 2] & 0xFF) << 40) |
@@ -524,61 +597,9 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 */
 	@Override
 	public String readUTF() throws IOException {
-		int utfLength = readUnsignedShort(); // Adds 2 to this buffer's position!
+		int utfLength = readUnsignedShort();
 		int validPos = checkAndRead(utfLength); // Adds utfLength to this buffer's position!
-		// Wasteful, should find a better way to allocate space without
-		// having to constantly bounds checking the array
-		char[] chars = new char[utfLength];
-		char ch = 0;
-		byte b2 = 0;
-		byte b3 = 0;
-		int offset = validPos;
-		int lastIndex = offset+utfLength;
-		int charIndex = 0;
-		// Read as many one byte characters as possible, either the entire
-		// string or until a multi-byte character is encountered
-		for( ; offset < lastIndex; offset++, charIndex++) {
-			ch = (char)(buffer[offset] & 0xFF);
-			if(ch > 127) { break; }
-			chars[charIndex] = ch;
-		}
-		// Read remaining multi-byte or single byte characters
-		for( ; offset < lastIndex; charIndex++) {
-			ch = (char)(buffer[offset] & 0xFF);
-			// If the first bit is 0, it is a 1 byte character (range: 0xxxxxxx)
-			if((ch >>> 7) == 0) {
-				chars[charIndex] = ch;
-				offset++;
-			}
-			// If the first byte indicates a 2 byte character (range: 110xxxxx 10xxxxxx)
-			else if((ch >>> 5) == 0x6) {
-				if(offset+2 > utfLength) { throw new UTFDataFormatException("malformed string: partial end character"); }
-				b2 = buffer[offset + 1];
-				if((b2 & 0xC0) != 0x80) {
-					throw new UTFDataFormatException("malformed char at buffer index " + (offset+1));
-				}
-				chars[charIndex] = (char)(((ch & 0x1F) << 6) | (b2 & 0x3F));
-				offset += 2;
-			}
-			// If the first byte indicates a 3 byte character (range: 1110xxxx 10xxxxxx 10xxxxxx)
-			else if((ch >>> 4) == 0xE) {
-				if(offset+3 > utfLength) { throw new UTFDataFormatException("malformed string: partial end character"); }
-				b2 = buffer[offset+1];
-				b3 = buffer[offset+2];
-				if((b2 & 0xC0) != 0x80 || (b3 & 0xC0) != 0x80) {
-					throw new UTFDataFormatException("malformed char at buffer index " + (offset+1) + " to " + (offset+2));
-				}
-				chars[charIndex] = (char)(((ch & 0x0F) << 12) |
-						((b2 & 0x3F) << 6) |
-						(b3 & 0x3F));
-				offset += 3;
-			}
-			// Illegal character codes, (example: 10xxxxxx, 1111xxxx)
-			else {
-				throw new UTFDataFormatException("malformed char at buffer index " + offset);
-			}
-		}
-		return new String(chars, 0, charIndex);
+		return readUTF(utfLength, buffer, validPos);
 	}
 
 
@@ -710,6 +731,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 		return oldPos;
 	}
 
+
 	/** Ensure that the specified number of bytes can be added to this buffer.
 	 * Ensure that {@code byteCount} number of bytes can be added without the buffer
 	 * overflowing and without an integer overflow.
@@ -738,6 +760,67 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 		pos += byteCount;
 		if(pos > maxPos) { maxPos = pos; }
 		//writeCount += byteCount;
+	}
+
+
+	/** Read a Java formatted UTF string from a buffer (except for the first two length bytes, which the caller has already read and is passed in as the {@code utfLength} parameter).
+	 * @param utfLength the length of the string (already read from the buffer)
+	 * @param buffer the buffer containing the bytes to parse
+	 * @param offset the buffer offset at which to start reading the string
+	 * @return the new string
+	 * @throws UTFDataFormatException
+	 */
+	public static final String readUTF(int utfLength, byte[] buffer, int offset) throws UTFDataFormatException {
+		char[] chars = new char[utfLength];
+		char ch = 0;
+		byte b2 = 0;
+		byte b3 = 0;
+		int lastIndex = offset + utfLength;
+		int charIndex = 0;
+		// Read as many one byte characters as possible, either the entire
+		// string or until a multi-byte character is encountered
+		for( ; offset < lastIndex; offset++, charIndex++) {
+			ch = (char)(buffer[offset] & 0xFF);
+			if(ch > 127) { break; }
+			chars[charIndex] = ch;
+		}
+		// Read remaining multi-byte or single byte characters
+		for( ; offset < lastIndex; charIndex++) {
+			ch = (char)(buffer[offset] & 0xFF);
+			// If the first bit is 0, it is a 1 byte character (range: 0xxxxxxx)
+			if((ch >>> 7) == 0) {
+				chars[charIndex] = ch;
+				offset++;
+			}
+			// If the first byte indicates a 2 byte character (range: 110xxxxx 10xxxxxx)
+			else if((ch >>> 5) == 0x6) {
+				if(offset+2 > utfLength) { throw new UTFDataFormatException("malformed string: partial end character"); }
+				b2 = buffer[offset + 1];
+				if((b2 & 0xC0) != 0x80) {
+					throw new UTFDataFormatException("malformed char at buffer index " + (offset+1));
+				}
+				chars[charIndex] = (char)(((ch & 0x1F) << 6) | (b2 & 0x3F));
+				offset += 2;
+			}
+			// If the first byte indicates a 3 byte character (range: 1110xxxx 10xxxxxx 10xxxxxx)
+			else if((ch >>> 4) == 0xE) {
+				if(offset+3 > utfLength) { throw new UTFDataFormatException("malformed string: partial end character"); }
+				b2 = buffer[offset+1];
+				b3 = buffer[offset+2];
+				if((b2 & 0xC0) != 0x80 || (b3 & 0xC0) != 0x80) {
+					throw new UTFDataFormatException("malformed char at buffer index " + (offset+1) + " to " + (offset+2));
+				}
+				chars[charIndex] = (char)(((ch & 0x0F) << 12) |
+						((b2 & 0x3F) << 6) |
+						(b3 & 0x3F));
+				offset += 3;
+			}
+			// Illegal character codes, (example: 10xxxxxx, 1111xxxx)
+			else {
+				throw new UTFDataFormatException("malformed char at buffer index " + offset);
+			}
+		}
+		return new String(chars, 0, charIndex);
 	}
 
 }

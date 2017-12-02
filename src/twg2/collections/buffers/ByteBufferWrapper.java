@@ -3,7 +3,7 @@ package twg2.collections.buffers;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-/** A byte buffer wrapper
+/** Same API as {@link ByteBuffer}, also implements interface {@link ByteBufferInterface}
  * @author TeamworkGuy2
  * @since 2013-9-27
  */
