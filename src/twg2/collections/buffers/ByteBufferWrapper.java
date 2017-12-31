@@ -3,14 +3,14 @@ package twg2.collections.buffers;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-/** Same API as {@link ByteBuffer}, also implements interface {@link ByteBufferInterface}
+/** Wrapper for a {@link ByteBuffer} with the same API, except this also implements {@link ByteBufferInterface}
  * @author TeamworkGuy2
  * @since 2013-9-27
  */
 public final class ByteBufferWrapper implements ByteBufferInterface {
 	private ByteBuffer buf;
 	@SuppressWarnings("unused")
-	private boolean isDestroyed = false;
+	private boolean destroyed = false;
 
 
 	public ByteBufferWrapper(ByteBuffer buf) {
@@ -24,7 +24,7 @@ public final class ByteBufferWrapper implements ByteBufferInterface {
 
 
 	public void destroy() {
-		this.isDestroyed = true;
+		this.destroyed = true;
 		this.buf = null;
 	}
 
@@ -67,7 +67,7 @@ public final class ByteBufferWrapper implements ByteBufferInterface {
 
 
 	@Override
-	public ByteBufferInterface position(int newPosition) {
+	public ByteBufferWrapper position(int newPosition) {
 		buf.position(newPosition);
 		return this;
 	}
@@ -80,42 +80,42 @@ public final class ByteBufferWrapper implements ByteBufferInterface {
 
 
 	@Override
-	public ByteBufferInterface limit(int newLimit) {
+	public ByteBufferWrapper limit(int newLimit) {
 		buf.limit(newLimit);
 		return this;
 	}
 
 
 	@Override
-	public ByteBufferInterface mark() {
+	public ByteBufferWrapper mark() {
 		buf.mark();
 		return this;
 	}
 
 
 	@Override
-	public ByteBufferInterface reset() {
+	public ByteBufferWrapper reset() {
 		buf.reset();
 		return this;
 	}
 
 
 	@Override
-	public ByteBufferInterface clear() {
+	public ByteBufferWrapper clear() {
 		buf.clear();
 		return this;
 	}
 
 
 	@Override
-	public ByteBufferInterface flip() {
+	public ByteBufferWrapper flip() {
 		buf.flip();
 		return this;
 	}
 
 
 	@Override
-	public ByteBufferInterface rewind() {
+	public ByteBufferWrapper rewind() {
 		buf.rewind();
 		return this;
 	}
@@ -146,7 +146,7 @@ public final class ByteBufferWrapper implements ByteBufferInterface {
 
 
 	@Override
-	public ByteBufferInterface put(byte b) {
+	public ByteBufferWrapper put(byte b) {
 		buf.put(b);
 		return this;
 	}
@@ -159,28 +159,28 @@ public final class ByteBufferWrapper implements ByteBufferInterface {
 
 
 	@Override
-	public ByteBufferInterface put(int index, byte b) {
+	public ByteBufferWrapper put(int index, byte b) {
 		buf.put(index, b);
 		return this;
 	}
 
 
 	@Override
-	public ByteBufferInterface get(byte[] dst, int offset, int length) {
+	public ByteBufferWrapper get(byte[] dst, int offset, int length) {
 		buf.get(dst, offset, length);
 		return this;
 	}
 
 
 	@Override
-	public ByteBufferInterface get(byte[] dst) {
+	public ByteBufferWrapper get(byte[] dst) {
 		buf.get(dst);
 		return this;
 	}
 
 
 	@Override
-	public ByteBufferInterface put(ByteBufferInterface src) {
+	public ByteBufferWrapper put(ByteBufferInterface src) {
 		if(src instanceof ByteBufferWrapper) {
 			buf.put(((ByteBufferWrapper) src).buf);
 		}
@@ -192,14 +192,14 @@ public final class ByteBufferWrapper implements ByteBufferInterface {
 
 
 	@Override
-	public ByteBufferInterface put(byte[] src, int offset, int length) {
+	public ByteBufferWrapper put(byte[] src, int offset, int length) {
 		buf.put(src, offset, length);
 		return this;
 	}
 
 
 	@Override
-	public ByteBufferInterface put(byte[] src) {
+	public ByteBufferWrapper put(byte[] src) {
 		buf.put(src);
 		return this;
 	}
@@ -230,14 +230,14 @@ public final class ByteBufferWrapper implements ByteBufferInterface {
 
 
 	@Override
-	public ByteBufferInterface putChar(char index) {
+	public ByteBufferWrapper putChar(char index) {
 		buf.putChar(index);
 		return this;
 	}
 
 
 	@Override
-	public ByteBufferInterface putChar(int index, char value) {
+	public ByteBufferWrapper putChar(int index, char value) {
 		buf.putChar(index, value);
 		return this;
 	}
@@ -256,14 +256,14 @@ public final class ByteBufferWrapper implements ByteBufferInterface {
 
 
 	@Override
-	public ByteBufferInterface putShort(short value) {
+	public ByteBufferWrapper putShort(short value) {
 		buf.putShort(value);
 		return this;
 	}
 
 
 	@Override
-	public ByteBufferInterface putShort(int index, short value) {
+	public ByteBufferWrapper putShort(int index, short value) {
 		buf.putShort(index, value);
 		return this;
 	}
@@ -282,14 +282,14 @@ public final class ByteBufferWrapper implements ByteBufferInterface {
 
 
 	@Override
-	public ByteBufferInterface putInt(int value) {
+	public ByteBufferWrapper putInt(int value) {
 		buf.putInt(value);
 		return this;
 	}
 
 
 	@Override
-	public ByteBufferInterface putInt(int index, int value) {
+	public ByteBufferWrapper putInt(int index, int value) {
 		buf.putInt(index, value);
 		return this;
 	}
@@ -308,14 +308,14 @@ public final class ByteBufferWrapper implements ByteBufferInterface {
 
 
 	@Override
-	public ByteBufferInterface putLong(long value) {
+	public ByteBufferWrapper putLong(long value) {
 		buf.putLong(value);
 		return this;
 	}
 
 
 	@Override
-	public ByteBufferInterface putLong(int index, long value) {
+	public ByteBufferWrapper putLong(int index, long value) {
 		buf.putLong(index, value);
 		return this;
 	}
@@ -334,14 +334,14 @@ public final class ByteBufferWrapper implements ByteBufferInterface {
 
 
 	@Override
-	public ByteBufferInterface putFloat(float value) {
+	public ByteBufferWrapper putFloat(float value) {
 		buf.putFloat(value);
 		return this;
 	}
 
 
 	@Override
-	public ByteBufferInterface putFloat(int index, float value) {
+	public ByteBufferWrapper putFloat(int index, float value) {
 		buf.putFloat(index, value);
 		return this;
 	}
@@ -360,14 +360,14 @@ public final class ByteBufferWrapper implements ByteBufferInterface {
 
 
 	@Override
-	public ByteBufferInterface putDouble(double value) {
+	public ByteBufferWrapper putDouble(double value) {
 		buf.putDouble(value);
 		return this;
 	}
 
 
 	@Override
-	public ByteBufferInterface putDouble(int index, double value) {
+	public ByteBufferWrapper putDouble(int index, double value) {
 		buf.putDouble(index, value);
 		return this;
 	}

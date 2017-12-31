@@ -33,6 +33,12 @@ public class WritableByteChannelOutputStream extends OutputStream {
 	}
 
 
+	public WritableByteChannelOutputStream(WritableByteChannel channel, ByteBuffer writeBuf) {
+		this.channel = channel;
+		this.tempWriteBuf = writeBuf;
+	}
+
+
 	@Override
 	public void write(int b) throws IOException {
 		tempWriteBuf.rewind();

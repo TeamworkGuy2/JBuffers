@@ -5,10 +5,10 @@ import org.junit.Test;
 
 import twg2.collections.buffers.ByteBufferArray;
 
-public class ByteBufferTest {
+public class ByteBufferArrayTest {
 
 	@Test
-	public void testByteBufferArray() throws Exception {
+	public void byteBufferArrayTest() throws Exception {
 		ByteBufferArray buf = new ByteBufferArray(16);
 		String str1 = "A string longer than 16 bytes";
 		byte[] bytesOriginal = {100, 101, 102, 103, 104};
@@ -69,7 +69,38 @@ public class ByteBufferTest {
 
 
 	@Test
-	public void testVarInt() throws Exception {
+	public void dataConstructorTest() {
+		byte[] ary = new byte[] { (byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE };
+		ByteBufferArray buf = new ByteBufferArray(ary, false); // use provided array without copying
+		Assert.assertEquals(0xCAFEBABE, buf.readInt());
+		buf.position(0);
+		ary[1] = (byte)0xAA; // modify the underlying array, should be reflected in the buffer
+		Assert.assertEquals(0xCAAABABE, buf.readInt());
+		buf.close();
+
+		ary = new byte[] { 0, 1, 1, 2, 3, 5, 7 };
+		buf = new ByteBufferArray(ary, 2, 3);
+		ary[2] = 55; // modify the original array, should not be reflected in the buffer
+		Assert.assertEquals(3, buf.remaining());
+		// read remaining into array
+		byte[] ary2 = new byte[5];
+		int rl = buf.read(ary2);
+		Assert.assertEquals(3, rl);
+		Assert.assertArrayEquals(new byte[] { 1, 2, 3, 0, 0 }, ary2);
+		buf.position(0);
+		// read byte-by-byte
+		Assert.assertEquals(1, buf.readByte());
+		Assert.assertEquals(2, buf.readByte());
+		Assert.assertEquals(3, buf.readByte());
+		Assert.assertEquals(0, buf.remaining());
+		Assert.assertEquals(3, buf.position());
+		Assert.assertEquals(3, buf.size());
+		buf.close();
+	}
+
+
+	@Test
+	public void varIntTest() throws Exception {
 		ByteBufferArray buf = new ByteBufferArray(16);
 
 		try {

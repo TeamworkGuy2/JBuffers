@@ -8,7 +8,7 @@ import twg2.collections.buffers.CircularByteArray;
 public class CircularByteArrayTest {
 
 	@Test
-	public void testCircularByteArray() {
+	public void circularByteArrayTest() {
 		CircularByteArray array = new CircularByteArray(5);
 		array.add(new byte[] {1, 2}, 0, 2);
 		array.add(new byte[] {3, 4, 5, 6, 7}, 2, 3);

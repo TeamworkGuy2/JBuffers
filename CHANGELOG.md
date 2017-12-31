@@ -4,7 +4,29 @@ This project does its best to adhere to [Semantic Versioning](http://semver.org/
 
 
 --------
-### [0.1.2](N/A) - 2017-12-02
+### [0.2.0](N/A) - 2017-12-31
+#### Added
+* Added `byte[]` constructor to ByteBufferArray
+* Added constructor `WritableByteChannelOutputStream(WritableByteChannel channel, ByteBuffer writeBuf)` for complete control
+* Added `Pool` class; a generic version of `ByteBufferPool`.  Constructor takes a supplier and consumer to create objects and reset them.
+
+#### Changed
+* Upgrade to Java 9
+* Upgrade to JUnit 5
+* Renamed `ByteBufferQueue` -> `ByteArrayQueue`
+* Renamed ByteArrayQueue methods:
+  * `getOffset()` -> `offset()`
+  * `getLength()` -> `length()`
+  * `removeFront()` -> `removeHead()`
+  * `removeBack()` -> `removeTail()`
+* ByteBufferWrapper now returns the more specific `ByteBufferWrapper` for all of it's chain methods instead of `ByteBufferInterface`
+* Additional unit tests
+
+#### Fixed
+* Fixed a ByteArrayQueue `removeBack()` bug
+
+--------
+### [0.1.2](https://github.com/TeamworkGuy2/JBuffers/commit/92e69ea6a3be43512672fc844b992843d0a36d0f) - 2017-12-02
 #### Added
 * ByteBufferArray `writeVarInt()` and `readVarInt()` which read/write the minimum number of bytes for a given int using the protobuf variable int encoding format (i.e. 127 reqires 1 byte; 205 requires 2 bytes; 10,750 requires 2 bytes)
 * `ByteBufferArray.readUTF(int, byte[], int)` static method to read a UTF string from a buffer excluding the first 2 length bytes

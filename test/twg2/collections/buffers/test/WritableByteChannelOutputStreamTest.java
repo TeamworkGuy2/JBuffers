@@ -12,7 +12,7 @@ import twg2.collections.buffers.WritableByteChannelOutputStream;
  * @author TeamworkGuy2
  * @since 2016-07-01
  */
-public class WritableByteChannelToOutputStreamTest {
+public class WritableByteChannelOutputStreamTest {
 
 	@Test
 	public void writeTest() throws IOException {

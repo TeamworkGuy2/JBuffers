@@ -27,9 +27,9 @@ import java.util.Arrays;
 public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	/** The buffer to store data in */
 	private byte buffer[];
-	/** The current absolute max data index (offset is not added to this value)
-	 * maxPos-1 is the highest absolute index containing data
-	 * Size can be calculated by subtracting offset from maxPos
+	/** The absolute max data index (offset is not added to this value)
+	 * maxPos-1 is the highest absolute index containing data.
+	 * Size is equal to maxPos. Remaining can be calculated by subtracting the current position from maxPos.
 	 */
 	private int maxPos;
 	/** The current index to write data to */
@@ -51,6 +51,41 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 			throw new IllegalArgumentException("Buffer size must be greater than zero: " + size);
 		}
 		this.buffer = new byte[size];
+		this.pos = 0;
+		this.maxPos = 0;
+	}
+
+
+	/** Constructs a byte buffer containing the specified data and this {@link #position()} set to 0
+	 * and {@link #remaining()} equal to {@code data.length}.
+	 * @param data the data array
+	 * @param copy whether to copy the data array or use it directly
+	 */
+	public ByteBufferArray(byte[] data, boolean copy) {
+		byte[] _data = data;
+		if(copy) {
+			_data = new byte[data.length];
+			System.arraycopy(data, 0, _data, 0, data.length);
+		}
+		this.buffer = _data;
+		this.pos = 0;
+		this.maxPos = _data.length;
+	}
+
+
+	/** Constructs a byte buffer containing the specified data sub-array and this {@link #position()} set 0
+	 * and {@link #remaining()} equal to {@code len}.
+	 * Because a this class has both read and write methods, the array range is copied into a new array
+	 * @param data the data array
+	 * @param off offset into {@code data} at which usable data begins
+	 * @param len the length of the usable {@code data} chunk starting from {@code off}
+	 */
+	public ByteBufferArray(byte[] data, int off, int len) {
+		byte[] _data = new byte[len];
+		System.arraycopy(data, off, _data, 0, len);
+		this.buffer = _data;
+		this.pos = 0;
+		this.maxPos = len;
 	}
 
 
@@ -240,7 +275,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	public final void writeUTF(String string) throws IOException {
 		int stringLength = string.length();
 		int utfLength = 0;
-		int oneByteCount = 0;
+		int asciiCount = 0;
 		char character = 0;
 
 		// Calculate the number of bytes in the string by calcuating how many bytes each character will consume
@@ -251,7 +286,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 				utfLength++;
 				// Keep track of how many characters are one byte, so that we can detect
 				// strings that are all one byte characters
-				oneByteCount++;
+				asciiCount++;
 			}
 			else if(character > 0x07FF) {
 				utfLength += 3;
@@ -273,7 +308,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 
 		// If the string is made purely of ASCII characters (which many are made from)
 		// then just write it byte by byte without complex if conditions
-		if(oneByteCount == utfLength) {
+		if(asciiCount == utfLength) {
 			for(int i = 0; i < stringLength; i++) {
 				character = string.charAt(i);
 				buffer[offset] = (byte)character;
@@ -412,14 +447,14 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 */
 	public int read(byte[] dst, int offset, int length) {
 		// Check that the offset and length and destination array are all within correct ranges
-		if((offset < 0 || length < 0) || (offset+length > dst.length || offset+length < 0)) {
+		if((offset < 0 || length < 0) || (offset + length > dst.length || offset + length < 0)) {
 			throw new IndexOutOfBoundsException();
 		}
 		// Make sure that this buffer has enough data to read and fill length number of bytes
-		int newPos = pos+length;
+		int newPos = pos + length;
 		if(newPos > maxPos) {
 			newPos = maxPos;
-			length = maxPos-pos;
+			length = maxPos - pos;
 		}
 		// Move the position ahead since read operations do move the position
 		// This will never exceed maxPos since the previous if statement already checked that newPos <= maxPos
@@ -638,7 +673,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 * @throws IOException if there is an error writing to the output stream
 	 */
 	public void writeTo(OutputStream out) throws IOException {
-		out.write(buffer, pos, maxPos-pos);
+		out.write(buffer, pos, maxPos - pos);
 	}
 
 
@@ -648,7 +683,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 * @throws IOException if there is an error writing to the data output stream
 	 */
 	public void writeTo(DataOutput out) throws IOException {
-		out.write(buffer, pos, maxPos-pos);
+		out.write(buffer, pos, maxPos - pos);
 	}
 
 
@@ -657,7 +692,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 * current position, {@link #size()} bytes are written to the byte buffer
 	 */
 	public void writeTo(ByteBuffer bb) {
-		bb.put(buffer, pos, maxPos-pos);
+		bb.put(buffer, pos, maxPos - pos);
 	}
 
 
@@ -708,7 +743,7 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 */
 	public void position(int index) {
 		if(index < 0 || index > maxPos) {
-			throw new IndexOutOfBoundsException();
+			throw new IndexOutOfBoundsException(index);
 		}
 		pos = index;
 	}
@@ -725,7 +760,9 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 * @throws IndexOutOfBoundsException If the number of bytes to read is less than 0 or exceeds the buffer's size
 	 */
 	private final int checkAndRead(int byteCount) {
-		if(pos+byteCount > maxPos || byteCount < 0) { throw new IndexOutOfBoundsException(); }
+		if(pos + byteCount > maxPos || byteCount < 0) {
+			throw new IndexOutOfBoundsException();
+		}
 		int oldPos = pos;
 		pos += byteCount;
 		return oldPos;
@@ -758,8 +795,9 @@ public class ByteBufferArray implements DataOutput, DataInput, Closeable {
 	 */
 	private final void bytesAdded(int byteCount) {
 		pos += byteCount;
-		if(pos > maxPos) { maxPos = pos; }
-		//writeCount += byteCount;
+		if(pos > maxPos) {
+			maxPos = pos;
+		}
 	}
 
 
