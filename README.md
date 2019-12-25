@@ -1,13 +1,12 @@
 JBuffers
 ==============
-version: `0.2.0`
 
 A collection of interfaces, factories, wrapper, and helper classes for java.nio.
 
 ## API:
 
 ### ByteBufferArray
-- A random access buffer API wrapping a `byte[]`.  Combines the resize-ability of `ByteArrayOutputStream`, the indexed positioning of `ByteBuffer`, and the read/write utility methods of `DataOutput`.
+- A random access buffer wrapping a `byte[]`.  Combines the resize-ability of `ByteArrayOutputStream`, the indexed positioning of `ByteBuffer`, and the read/write utility methods of `DataOutput`.
   Also includes `writeVarInt()` and `readVarInt()` which read/write the minimum number of bytes needed for a given int, based on the protobuf variable int encoding format.
 
 ### ByteBufferFactory, ByteBufferFactoryImpl

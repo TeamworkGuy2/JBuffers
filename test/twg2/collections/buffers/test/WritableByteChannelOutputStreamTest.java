@@ -20,7 +20,11 @@ public class WritableByteChannelOutputStreamTest {
 		DummyWritableByteChannel byteChannel = new DummyWritableByteChannel(charset);
 		WritableByteChannelOutputStream stream = new WritableByteChannelOutputStream(byteChannel, 16);
 		stream.write("[0-9]".getBytes(charset));
-		stream.write("WritableByteChannelToOutputStream".getBytes(charset));
+		stream.write("WritableByteChannel".getBytes(charset));
+		for(byte b : "ToOutput".getBytes(charset)) {
+			stream.write(b);
+		}
+		stream.write("Stream".getBytes(charset));
 
 		Assert.assertEquals("[0-9]WritableByteChannelToOutputStream", byteChannel.getString());
 

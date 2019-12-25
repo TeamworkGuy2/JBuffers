@@ -4,7 +4,18 @@ This project does its best to adhere to [Semantic Versioning](http://semver.org/
 
 
 --------
-### [0.2.0](N/A) - 2017-12-31
+### [0.3.0](N/A) - 2019-12-25
+#### Changed
+* `ByteBufferPool` now implements `ByteBufferFactory` and internal
+* `ByteBufferPool` and `Pool`:
+  * Remove synchronized() blocks from some methods since it wasn't fully implemented. Warning: pool synchronization should be done externally or via sub-class.
+  * Internal fields changed from `private` to `protected` to allow for extension
+  * Internal storage implementation changed from `List<>` to `Object[]`
+  * getInUseCount() added
+
+
+--------
+### [0.2.0](https://github.com/TeamworkGuy2/JBuffers/commit/b099800f174cd5b3a068b346dadfe54063ec40be) - 2017-12-31
 #### Added
 * Added `byte[]` constructor to ByteBufferArray
 * Added constructor `WritableByteChannelOutputStream(WritableByteChannel channel, ByteBuffer writeBuf)` for complete control

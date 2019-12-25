@@ -12,6 +12,6 @@ public interface ByteBufferFactory extends ReusableResourceFactory<ByteBuffer> {
 
 	public int getBufferByteSize();
 
-	public void setBufferByteSize(int byteCount);
+	public void setBufferByteSize(int bufferByteCount);
 
 }

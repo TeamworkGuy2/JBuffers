@@ -26,20 +26,31 @@ public class PoolTest {
 
 		Assert.assertEquals(maxPoolSize, insts.size());
 
-		StringBuilder inst = insts.get(0);
-		inst.append('a');
-		inst.append("bc");
-		Assert.assertEquals("abc", inst.toString());
+		StringBuilder inst1 = insts.get(0);
+		inst1.append('a');
+		inst1.append("bc");
+		Assert.assertEquals("abc", inst1.toString());
 
-		Assert.assertTrue(pool.returnInstance(inst));
-		insts.remove(0);
+		Assert.assertTrue(pool.returnInstance(inst1));
+
+		StringBuilder inst2 = insts.get(1);
+		Assert.assertTrue(pool.returnInstance(inst2));
 
 		Assert.assertTrue(pool.hasInstance());
+		Assert.assertEquals(1, pool.getInUseCount());
 
-		inst = pool.getInstance();
-		insts.add(inst);
+		inst1 = pool.getInstance();
+		Assert.assertEquals(insts.get(0), inst1);
+		Assert.assertEquals(0, inst1.length()); // reset
 
-		Assert.assertEquals(0, inst.length());
+		Assert.assertTrue(pool.hasInstance());
+		Assert.assertEquals(2, pool.getInUseCount());
+
+		inst1 = pool.getInstance();
+		Assert.assertEquals(insts.get(1), inst2);
+
+		Assert.assertFalse(pool.hasInstance());
+		Assert.assertEquals(3, pool.getInUseCount());
 	}
 
 }
